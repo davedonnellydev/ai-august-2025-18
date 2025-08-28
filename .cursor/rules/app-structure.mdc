@@ -1,0 +1,57 @@
+---
+description: Outlines the app's objectives and architecture
+globs:
+alwaysApply: false
+---
+# Daily Affirmations app
+## Objectives
+This is an app that generates a daily affirmation for the user using AI. There should be an option to generate custom affirmations (ones guided by prompts from the user), and the user should also be able to save their favourites.
+
+
+## App skeleton
+
+```
+app/
+  _layout.tsx           // Tab navigator (Home, Custom, Favorites)
+  index.tsx             // Home
+  custom.tsx            // Custom
+  favorites.tsx         // Favorites
+lib/
+  api.ts                // fetch helpers for your serverless API
+  storage.ts            // AsyncStorage helpers (load/save state)
+  types.ts
+components/
+  AffirmationCard.tsx
+  Button.tsx (optional) // or use RN default
+```
+
+## Screens
+1. Home (/)
+- Show Today’s Affirmation (pull from cache; if missing/old, call API).
+- Actions: Regenerate (daily), Save to Favorites, Copy, Share.
+
+2. Custom (/custom)
+
+- Inputs: mood/goal text area, optional tags (e.g., focus, calm, confidence).
+- Button: Generate Custom → display result → Save.
+
+3. Favorites (/favorites)
+
+- List of saved affirmations (newest first).
+- Actions: copy/share/delete.
+
+## Flow detail (daily):
+- On mount, check `todayDate` vs device local date.
+- If different/missing → call `/api/affirmation?type=daily` → save as today, render.
+- If same → render cached instantly.
+
+
+## API call
+I've built a serverless endpoint on Netlify that can receive a POST call which will return the affirmation. The endpoint is saved in `EXPO_PUBLIC_API_URL` and the body of that call is outlined below:
+```ts
+{
+    type: "daily" | "custom",
+    userContext?: string
+}
+```
+There is already a generateAffirmation() function defined in the lib/api.ts file.

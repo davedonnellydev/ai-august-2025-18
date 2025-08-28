@@ -1,0 +1,112 @@
+---
+description: Outline of the build plan
+globs:
+alwaysApply: true
+---
+### High-level plan to ship today
+
+- **Goal**: MVP that loads a daily affirmation on Home, lets users generate custom ones, and save/manage favorites. Nice-to-haves can be deferred.
+
+### 1. Setup and routing (done or quick verify)
+- **Verify Expo Router entry**: `index.ts` uses `expo-router/entry` and `app/(tabs)/_layout.tsx` defines Home, Custom, Favorites.
+- **Clean up**: Keep `App.tsx` unused or delete later; ensure `app.json` plugins include `expo-router` (already present).
+
+### 2. Environment and types
+- **Env**: Add `EXPO_PUBLIC_API_URL` in `.env` or app config for Netlify endpoint.
+- **Types** in `lib/types.ts`:
+  - **Affirmation**: `{ id: string; text: string; createdAt: string; sourceType: 'daily' | 'custom'; tags?: string[] }`
+  - **DailyCache**: `{ date: string; affirmation: Affirmation }`
+
+### 3. API helper (lib/api.ts)
+- **Use provided `generateAffirmation()`**:
+  - Accept `{ type: 'daily' | 'custom', userContext?: string }`
+  - POST to `process.env.EXPO_PUBLIC_API_URL`
+  - Return `{ text: string }` or an `Affirmation` shape you normalize.
+- **Add small adapter** that wraps the raw result into an `Affirmation` with `id` and `createdAt`.
+
+### 4. Storage helpers (lib/storage.ts)
+- **AsyncStorage keys**:
+  - `@affirmations/daily` → `DailyCache`
+  - `@affirmations/favorites` → `Affirmation[]`
+- **Functions**:
+  - `getDailyCache()`, `setDailyCache(cache)`
+  - `getFavorites()`, `saveFavorite(aff)`, `removeFavorite(id)`
+  - Helpers ensure newest-first order; de-duplicate by `id`.
+
+### 5. Shared UI component
+- **`app/components/AffirmationCard.tsx`**:
+  - Props: `{ affirmation, onSave, onCopy, onShare, showSave?: boolean }`
+  - Layout: large text, action row: Save, Copy, Share
+  - Copy: use `expo-clipboard`
+  - Share: use React Native `Share` API
+
+### 6. Home screen (`app/(tabs)/index.tsx`)
+- **State**: `{ loading, error, affirmation }`
+- **On mount**:
+  - Compute `todayDate` as local `YYYY-MM-DD`.
+  - Get `DailyCache`. If `cache?.date === todayDate`, render instantly.
+  - Else call `generateAffirmation({ type: 'daily' })`, normalize to `Affirmation`, save cache `{ date: todayDate, affirmation }`.
+- **Actions**:
+  - **Regenerate**: Confirm, call daily API again, overwrite cache (allow manual refresh even if same day).
+  - **Save to Favorites**: `saveFavorite(affirmation)`.
+  - **Copy/Share**: via `AffirmationCard` handlers.
+- **UI**:
+  - Loading spinner, error with retry, and main card with actions.
+
+### 7. Custom screen (`app/(tabs)/custom.tsx`)
+- **Inputs**:
+  - Multiline text area for “mood/goal”
+  - Optional tag pills (focus/calm/confidence); store selected tag strings
+- **Generate flow**:
+  - Disable button while loading; call `generateAffirmation({ type: 'custom', userContext: input + tags })`
+  - Show result in `AffirmationCard` with Save/Copy/Share
+- **Save**:
+  - Save custom affirmation to favorites; include selected `tags` and `sourceType: 'custom'`
+
+### 8. Favorites screen (`app/(tabs)/favorites.tsx`)
+- **Data**:
+  - Load `getFavorites()` on focus (use `useFocusEffect`), keep in local state.
+- **List**:
+  - FlatList newest-first. Each row uses `AffirmationCard` (without Save).
+  - Row actions: Copy, Share, Delete (trash icon).
+- **Delete**:
+  - Confirm; call `removeFavorite(id)`; update local state.
+
+### 9. Polish and UX safeguards
+- **Once-per-day guard (soft)**:
+  - Home automatically refreshes by date; “Regenerate” is allowed but consider a toast warning if abused.
+- **Toasts**:
+  - Simple feedback: “Copied”, “Saved”, “Removed”, “Shared” (can use `Alert`/`ToastAndroid`/`Haptics` if time).
+- **Empty states**:
+  - Favorites empty → friendly message.
+  - Custom before result → helper text.
+- **Errors**:
+  - API or network errors show message with Retry.
+
+### 10. Testing pass (manual)
+- **Home**: first load cache-miss → API → cache; reload app shows cached instantly.
+- **Regenerate**: updates cache and UI.
+- **Custom**: generate with/without tags; Save shows in Favorites.
+- **Favorites**: copy/share/delete work; persist across reloads.
+- **Offline**: Home renders cached if present; Custom shows error and no crash.
+
+### 11. Stretch (if time remains)
+- **Tag chips** with toggle visuals
+- **Haptics** on key actions
+- **Theming** and nicer typography
+- **Debounce custom requests**, minimal input validation
+
+### 12. Timeboxing (suggested)
+- Setup/types/storage: 45–60 min
+- Home flow: 60–90 min
+- Custom flow: 45–60 min
+- Favorites: 45–60 min
+- Polish/QA: 45–60 min
+
+### 13. Acceptance checklist
+- [ ] Home shows cached-or-fetched daily affirmation
+- [ ] Regenerate works and updates cache
+- [ ] Custom generates and can save
+- [ ] Favorites lists, copies, shares, deletes, and persists
+- [ ] No crashes; basic errors handled
+- [ ] ENV configured and API calls succeed

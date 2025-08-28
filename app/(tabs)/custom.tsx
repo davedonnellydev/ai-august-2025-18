@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function Tab() {
+export default function CustomScreen() {
   return (
     <View style={styles.container}>
-      <Text>This is the 'Tab' component in the 'app/(tabs)/index.tsx file.</Text>
+      <Text>Custom Affirmation Builder</Text>
     </View>
   );
 }
