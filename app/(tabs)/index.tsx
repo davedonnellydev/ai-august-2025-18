@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { generateAffirmation, toAffirmation } from '../../lib/api';
 import { getDailyCache, saveFavorite, setDailyCache } from '../../lib/storage';
 import { Affirmation, DailyCache } from '../../lib/types';
@@ -25,33 +25,46 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [affirmation, setAffirmation] = useState<Affirmation | null>(null);
+  const lastRegenerateRef = useRef<number>(0);
 
   const todayDate = useMemo(() => getTodayLocalISODate(), []);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert(message);
+    }
+  };
+
+  const loadDaily = async (force: boolean) => {
+    try {
+      setLoading(true);
+      setError(null);
+      if (!force) {
         const cache: DailyCache | null = await getDailyCache();
         if (cache?.date === todayDate) {
-          if (!mounted) return;
           setAffirmation(cache.affirmation);
           setLoading(false);
           return;
         }
-        const raw = await generateAffirmation({ type: 'daily' });
-        const aff = toAffirmation(raw, 'daily');
-        await setDailyCache({ date: todayDate, affirmation: aff });
-        if (!mounted) return;
-        setAffirmation(aff);
-        setLoading(false);
-      } catch (e: any) {
-        if (!mounted) return;
-        setError(e?.message ?? 'Failed to load daily affirmation');
-        setLoading(false);
       }
+      const raw = await generateAffirmation({ type: 'daily' });
+      const aff = toAffirmation(raw, 'daily');
+      await setDailyCache({ date: todayDate, affirmation: aff });
+      setAffirmation(aff);
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load daily affirmation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!mounted) return;
+      await loadDaily(false);
     })();
     return () => {
       mounted = false;
@@ -59,24 +72,19 @@ export default function HomeScreen() {
   }, [todayDate]);
 
   const handleRegenerate = () => {
+    const now = Date.now();
+    if (now - lastRegenerateRef.current < 3000) {
+      showToast('Please wait a moment before regenerating again');
+      return;
+    }
     Alert.alert('Regenerate daily affirmation?', 'This will replace today\'s affirmation.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Regenerate',
         style: 'destructive',
         onPress: async () => {
-          try {
-            setLoading(true);
-            setError(null);
-            const raw = await generateAffirmation({ type: 'daily' });
-            const aff = toAffirmation(raw, 'daily');
-            await setDailyCache({ date: todayDate, affirmation: aff });
-            setAffirmation(aff);
-          } catch (e: any) {
-            setError(e?.message ?? 'Failed to regenerate');
-          } finally {
-            setLoading(false);
-          }
+          lastRegenerateRef.current = Date.now();
+          await loadDaily(true);
         },
       },
     ]);
@@ -84,7 +92,7 @@ export default function HomeScreen() {
 
   const handleSave = async (aff: Affirmation) => {
     await saveFavorite(aff);
-    Alert.alert('Saved to favorites');
+    showToast('Saved to favorites');
   };
 
   const handleCopy = async (text: string) => {
@@ -117,8 +125,8 @@ export default function HomeScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
-        <Pressable style={[styles.button, styles.primary]} onPress={() => setError(null)}>
-          <Text style={styles.primaryLabel}>Dismiss</Text>
+        <Pressable style={[styles.button, styles.primary]} onPress={() => loadDaily(false)}>
+          <Text style={styles.primaryLabel}>Retry</Text>
         </Pressable>
       </View>
     );

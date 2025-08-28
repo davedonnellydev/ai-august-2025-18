@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, Share, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, Share, StyleSheet, Text, TextInput, ToastAndroid, TouchableWithoutFeedback, View } from 'react-native';
 import { generateAffirmation, toAffirmation } from '../../lib/api';
 import { saveFavorite } from '../../lib/storage';
 import { Affirmation } from '../../lib/types';
@@ -38,7 +38,11 @@ export default function CustomScreen() {
 
   const handleSave = async (aff: Affirmation) => {
     await saveFavorite(aff);
-    Alert.alert('Saved to favorites');
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Saved to favorites', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Saved to favorites');
+    }
   };
 
   const handleCopy = async (text: string) => {

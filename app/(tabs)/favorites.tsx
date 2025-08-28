@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Share, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { getFavorites, removeFavorite } from '../../lib/storage';
 import { Affirmation } from '../../lib/types';
 import AffirmationCard from '../components/AffirmationCard';
@@ -26,7 +26,11 @@ export default function FavoritesScreen() {
     try {
       const Clipboard = await import('expo-clipboard');
       await Clipboard.setStringAsync(text);
-      Alert.alert('Copied');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Copied', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Copied');
+      }
     } catch {
       Alert.alert('Copy failed', 'Install expo-clipboard to enable copy');
     }
@@ -49,7 +53,11 @@ export default function FavoritesScreen() {
         onPress: async () => {
           const next = await removeFavorite(id);
           setFavorites(next);
-          Alert.alert('Removed');
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Removed', ToastAndroid.SHORT);
+          } else {
+            Alert.alert('Removed');
+          }
         },
       },
     ]);
