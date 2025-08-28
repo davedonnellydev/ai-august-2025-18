@@ -27,7 +27,7 @@ export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, 
 
   return (
     <View style={styles.card}>
-      <Text style={styles.text}>{affirmation.text}</Text>
+      <Text style={styles.text}>“{affirmation.text}”</Text>
       <View style={styles.actions}>
         {showSave && (
           <Pressable style={[styles.button, styles.primary]} onPress={handleSave} accessibilityRole="button">
@@ -53,21 +53,24 @@ export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, 
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#eef2ff',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 3,
-    gap: 16,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 2,
+    gap: 18,
   },
   text: {
-    fontSize: 22,
-    lineHeight: 30,
+    fontSize: 24,
+    lineHeight: 34,
     textAlign: 'center',
-    color: '#111',
+    color: '#0f172a',
+    fontWeight: '700',
   },
   actions: {
     flexDirection: 'row',
@@ -76,16 +79,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   button: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#eee',
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   primary: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#7c3aed',
+    borderColor: '#7c3aed',
   },
   danger: {
     backgroundColor: '#ef4444',
+    borderColor: '#ef4444',
   },
   buttonLabel: {
     color: '#111',

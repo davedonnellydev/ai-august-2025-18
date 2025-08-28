@@ -1,4 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, Share, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { getFavorites, removeFavorite } from '../../lib/storage';
@@ -81,23 +82,25 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <FlatList
-      contentContainerStyle={styles.list}
-      data={favorites}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View style={styles.row}>
-          <AffirmationCard
-            affirmation={item}
-            onCopy={handleCopy}
-            onShare={handleShare}
-            onDelete={() => confirmDelete(item.id)}
-            showSave={false}
-            showDelete
-          />
-        </View>
-      )}
-    />
+    <LinearGradient colors={["#f5f3ff", "#fff"]} style={{ flex: 1 }}>
+      <FlatList
+        contentContainerStyle={styles.list}
+        data={favorites}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <AffirmationCard
+              affirmation={item}
+              onCopy={handleCopy}
+              onShare={handleShare}
+              onDelete={() => confirmDelete(item.id)}
+              showSave={false}
+              showDelete
+            />
+          </View>
+        )}
+      />
+    </LinearGradient>
   );
 }
 

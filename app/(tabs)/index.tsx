@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, View } from 'react-native';
 import { generateAffirmation, toAffirmation } from '../../lib/api';
@@ -144,7 +145,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.page}>
+    <LinearGradient colors={["#f5f3ff", "#fff"]} style={styles.page}>
       <Text style={styles.dateLabel}>{formatTodayLabel()}</Text>
       <AffirmationCard
         affirmation={affirmation}
@@ -158,7 +159,7 @@ export default function HomeScreen() {
           <Text style={styles.primaryLabel}>Regenerate</Text>
         </Pressable>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -171,6 +172,7 @@ const styles = StyleSheet.create({
   dateLabel: {
     textAlign: 'center',
     color: '#6b7280',
+    fontWeight: '600',
   },
   footer: {
     alignItems: 'center',
@@ -188,13 +190,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   button: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#eee',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: '#7c3aed',
   },
   primary: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#7c3aed',
   },
   primaryLabel: {
     color: '#fff',
