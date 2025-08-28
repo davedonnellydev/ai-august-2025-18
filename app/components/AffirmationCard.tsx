@@ -6,10 +6,12 @@ type Props = {
   onSave?: (affirmation: Affirmation) => void;
   onCopy?: (text: string) => void;
   onShare?: (text: string) => void;
+  onDelete?: (affirmation: Affirmation) => void;
   showSave?: boolean;
+  showDelete?: boolean;
 };
 
-export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, showSave = true }: Props) {
+export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, onDelete, showSave = true, showDelete = false }: Props) {
   const handleSave = () => {
     onSave?.(affirmation);
   };
@@ -18,6 +20,9 @@ export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, 
   };
   const handleShare = () => {
     onShare?.(affirmation.text);
+  };
+  const handleDelete = () => {
+    onDelete?.(affirmation);
   };
 
   return (
@@ -35,6 +40,11 @@ export default function AffirmationCard({ affirmation, onSave, onCopy, onShare, 
         <Pressable style={styles.button} onPress={handleShare} accessibilityRole="button">
           <Text style={styles.buttonLabel}>Share</Text>
         </Pressable>
+        {showDelete && (
+          <Pressable style={[styles.button, styles.danger]} onPress={handleDelete} accessibilityRole="button">
+            <Text style={styles.dangerLabel}>Delete</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -74,11 +84,18 @@ const styles = StyleSheet.create({
   primary: {
     backgroundColor: '#2563eb',
   },
+  danger: {
+    backgroundColor: '#ef4444',
+  },
   buttonLabel: {
     color: '#111',
     fontWeight: '600',
   },
   primaryLabel: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  dangerLabel: {
     color: '#fff',
     fontWeight: '600',
   },

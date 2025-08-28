@@ -13,6 +13,14 @@ function getTodayLocalISODate(): string {
   return `${year}-${month}-${day}`;
 }
 
+function formatTodayLabel(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString(undefined, { weekday: 'short' });
+  const day = now.toLocaleDateString(undefined, { day: '2-digit' });
+  const month = now.toLocaleDateString(undefined, { month: 'long' });
+  return `${weekday}, ${day} ${month}`;
+}
+
 export default function HomeScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +137,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.page}>
+      <Text style={styles.dateLabel}>{formatTodayLabel()}</Text>
       <AffirmationCard
         affirmation={affirmation}
         onSave={handleSave}
@@ -150,6 +159,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 16,
+  },
+  dateLabel: {
+    textAlign: 'center',
+    color: '#6b7280',
   },
   footer: {
     alignItems: 'center',
