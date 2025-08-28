@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, Share, StyleSheet, Text, TextInput, ToastAndroid, TouchableWithoutFeedback, View } from 'react-native';
 import { generateAffirmation, toAffirmation } from '../../lib/api';
@@ -66,7 +67,7 @@ export default function CustomScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.page}>
+        <LinearGradient colors={["#f5f3ff", "#fff"]} style={styles.page}>
           <Text style={styles.title}>Create a custom affirmation</Text>
           <TextInput
             style={styles.input}
@@ -114,7 +115,7 @@ export default function CustomScreen() {
               />
             </View>
           )}
-        </View>
+        </LinearGradient>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
