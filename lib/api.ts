@@ -6,12 +6,27 @@ type GenerateParams = {
 };
 
 export async function generateAffirmation({ type, userContext }: GenerateParams): Promise<{ text: string }> {
-  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/affirmation`, {
+  const url = process.env.EXPO_PUBLIC_API_URL;
+  if (!url) {
+    throw new Error('Missing EXPO_PUBLIC_API_URL');
+  }
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type, userContext }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        const err = (await res.json()) as { error?: string; message?: string };
+        throw new Error(err.error || err.message || `${res.status} ${res.statusText}`);
+      } catch {
+        // fallthrough to status text below
+      }
+    }
+    throw new Error(`${res.status} ${res.statusText}`);
+  }
   const data = (await res.json()) as { text: string };
   return data;
 }
