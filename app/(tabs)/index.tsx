@@ -1,17 +1,182 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { generateAffirmation, toAffirmation } from '../../lib/api';
+import { getDailyCache, saveFavorite, setDailyCache } from '../../lib/storage';
+import { Affirmation, DailyCache } from '../../lib/types';
+import AffirmationCard from '../components/AffirmationCard';
 
-export default function Tab() {
+function getTodayLocalISODate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export default function HomeScreen() {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [affirmation, setAffirmation] = useState<Affirmation | null>(null);
+
+  const todayDate = useMemo(() => getTodayLocalISODate(), []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const cache: DailyCache | null = await getDailyCache();
+        if (cache?.date === todayDate) {
+          if (!mounted) return;
+          setAffirmation(cache.affirmation);
+          setLoading(false);
+          return;
+        }
+        const raw = await generateAffirmation({ type: 'daily' });
+        const aff = toAffirmation(raw, 'daily');
+        await setDailyCache({ date: todayDate, affirmation: aff });
+        if (!mounted) return;
+        setAffirmation(aff);
+        setLoading(false);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message ?? 'Failed to load daily affirmation');
+        setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [todayDate]);
+
+  const handleRegenerate = () => {
+    Alert.alert('Regenerate daily affirmation?', 'This will replace today\'s affirmation.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Regenerate',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            setError(null);
+            const raw = await generateAffirmation({ type: 'daily' });
+            const aff = toAffirmation(raw, 'daily');
+            await setDailyCache({ date: todayDate, affirmation: aff });
+            setAffirmation(aff);
+          } catch (e: any) {
+            setError(e?.message ?? 'Failed to regenerate');
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleSave = async (aff: Affirmation) => {
+    await saveFavorite(aff);
+    Alert.alert('Saved to favorites');
+  };
+
+  const handleCopy = async (text: string) => {
+    try {
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.setStringAsync(text);
+      Alert.alert('Copied');
+    } catch {
+      Alert.alert('Copy failed', 'Install expo-clipboard to enable copy');
+    }
+  };
+
+  const handleShare = async (text: string) => {
+    try {
+      await Share.share({ message: text });
+    } catch {
+      // no-op
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable style={[styles.button, styles.primary]} onPress={() => setError(null)}>
+          <Text style={styles.primaryLabel}>Dismiss</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (!affirmation) {
+    return (
+      <View style={styles.center}>
+        <Text>No affirmation available.</Text>
+        <Pressable style={[styles.button, styles.primary]} onPress={handleRegenerate}>
+          <Text style={styles.primaryLabel}>Generate</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>This is the 'Tab' component in the 'app/(tabs)/index.tsx file.</Text>
+    <View style={styles.page}>
+      <AffirmationCard
+        affirmation={affirmation}
+        onSave={handleSave}
+        onCopy={handleCopy}
+        onShare={handleShare}
+        showSave
+      />
+      <View style={styles.footer}>
+        <Pressable style={[styles.button, styles.primary]} onPress={handleRegenerate}>
+          <Text style={styles.primaryLabel}>Regenerate</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  page: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 16,
+    gap: 16,
+  },
+  footer: {
     alignItems: 'center',
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 16,
+  },
+  errorText: {
+    color: '#b91c1c',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  button: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  primary: {
+    backgroundColor: '#2563eb',
+  },
+  primaryLabel: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
